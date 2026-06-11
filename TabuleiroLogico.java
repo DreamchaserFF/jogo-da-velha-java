@@ -4,23 +4,26 @@
 ///                                                       ///
 /////////////////////////////////////////////////////////////
 
-public class TabuleiroLogico {
-    private char[] tabuleiro;
-    private char simboloJogador = 'o';
-    private char simboloCpu     = 'x';
-    private char simboloVazio   = ' ';
-    private char turnoAtual     = simboloJogador;
+// public class TabuleiroLogico {
+//     private char[] tabuleiro;
+//     private char simboloJogador    = 'o';
+//     private char simboloCpu        = 'x';
+//     private char simboloVazio      = ' ';
+//     private boolean turnoJogador   = true;
 
-    // Metodos
-    public static char obterSimbolo(int indice){
-        return ' ';
-    }
-
-    public TabuleiroLogico(){
-        this.tabuleiro  = new char[9];
+//     public TabuleiroLogico(){
+//         tabuleiro = new char[9];
     
-        for (int i = 0; i < tabuleiro.length; i++){
-            tabuleiro[i] = ' ';
-        }
-    }
-}
+//         for (int i = 0; i < tabuleiro.length; i++){
+//             tabuleiro[i] = 'x';
+//         }
+//     }
+
+//     // Metodos
+//     public char obterSimbolo(int indiceClicado){
+//         if (tabuleiro[indiceClicado] == 'x'){
+//             tabuleiro[indiceClicado] = simboloJogador;
+//         }
+//         return simboloJogador;
+//     }
+// }
