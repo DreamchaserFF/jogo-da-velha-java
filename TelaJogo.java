@@ -1,8 +1,6 @@
 import java.awt.Color;
-import java.awt.Font;
 import java.awt.GridLayout;
 import java.awt.Image;
-import java.awt.event.ActionListener;
 import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
 import javax.swing.BorderFactory;
@@ -12,6 +10,9 @@ import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.border.Border;
 
+import java.util.Random;
+import java.util.Random.*;
+
 /////////////////////////////////////////////////////////////
 ///                                                       ///
 ///                  CONFIGURAÇÃO DA TELA                 ///
@@ -20,13 +21,17 @@ import javax.swing.border.Border;
 
 public class TelaJogo extends JFrame {
     // Atributos da classe
-    Image imgVazia    = new ImageIcon("botao_vazio.png").getImage(); // Carrega a imagem original para manter a qualidade
-    Image imgX        = new ImageIcon("botao_x.png").getImage();
-    Image imgO        = new ImageIcon("botao_o.png").getImage();
-    ImageIcon icone   = new ImageIcon("velha.png"); // Cria um icone de imagem
-    Border border     = BorderFactory.createLineBorder(Color.BLACK,3); // Cria a borda - Não está fazendo nada
-    char simboloAtual = ' '; //Variavel que vai pegar o simbolo do jogador atual
-    private char[] estado = {' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '};
+    Image imgVazia       = new ImageIcon("botao_vazio.png").getImage(); // Carrega a imagem original para manter a qualidade
+    Image imgX           = new ImageIcon("botao_x.png").getImage();
+    Image imgO           = new ImageIcon("botao_o.png").getImage();
+    ImageIcon icone      = new ImageIcon("velha.png"); // Cria um icone de imagem
+    Border border        = BorderFactory.createLineBorder(Color.BLACK,3); // Cria a borda - Não está fazendo nada
+    char simboloAtual    = ' '; //Variavel que vai pegar o simbolo do jogador atual
+    Random jogadaMaquina = new Random();
+    boolean jogando      = true;
+
+    private char[] estado = {' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '}; // Array para marcar estado
+
 
     JLabel label = new JLabel(); // Cria o label
     private JButton[] botoes = new JButton[9]; // Cria os botoes
@@ -36,7 +41,7 @@ public class TelaJogo extends JFrame {
     public void inserirImagem(JButton botao, Image imagem){
         int largura = botao.getWidth();
         int altura  = botao.getHeight();
-        Image imgRedim = imagem.getScaledInstance(largura, altura, Image.SCALE_SMOOTH); // Redimensiona a imagem
+        Image imgRedim = imagem.getScaledInstance(largura, altura, Image.SCALE_FAST); // Redimensiona a imagem
         botao.setIcon(new ImageIcon(imgRedim));
     };
 
@@ -55,16 +60,12 @@ public class TelaJogo extends JFrame {
             // Precisamos criar constantes com "final" porque se usarmos variaveis, elas podem mudar ou não existir mais antes do jogo carregar.
             botoes[i] = new JButton();
             botoes[i].setBorder(border); // Passa a border criada para os botões.
-            botoes[i].setFont(new Font("Arial", Font.BOLD, 60));
             final JButton btnAtual = botoes[i]; // captura uma "imagem" da variavel do botao nesse momento
             final int indiceAtual  = i; // Captura uma imagem do indice
-            System.out.println(botoes[i]);
 
             // Lógica do click
-            btnAtual.addActionListener(e -> {
-                estado[indiceAtual] = 'o'; // Salva o dado na memoria (model)
-                inserirImagem(btnAtual, imgO); // Atualiza a tela (view)
-            });
+            // Em java, o metodo pode ser chamado antes de ser criado.
+            btnAtual.addActionListener(e -> processarJogada(indiceAtual, btnAtual));
 
             // Listener de redimensionamento para deixar a imgem responsiva.
             btnAtual.addComponentListener(new ComponentAdapter() {
@@ -92,5 +93,28 @@ public class TelaJogo extends JFrame {
 
         setIconImage(icone.getImage()); // Coloca o icone na janela
         setVisible(true); // Deixa ele visível. Deve sempre ir por ultimo para garantir que tudo carregue
+    }
+
+    private void processarJogada(int indice, JButton botao){
+        if(estado[indice] == ' ' && jogando){
+            estado[indice] = 'o'; // Salva o dado na memoria (model)
+            inserirImagem(botao, imgO); // Atualiza a tela (view)
+
+            if(jogando){
+                jogadaMaquina();
+            //Logica de vitoria vai vir aqui. Se vencer, mudar jogando = false
+            }
+        }
+    }
+
+    private void jogadaMaquina(){
+        int indiceAleatorio;
+
+        do {
+            indiceAleatorio = jogadaMaquina.nextInt(estado.length);
+        } while (estado[indiceAleatorio] != ' ');
+
+        estado[indiceAleatorio] = 'x';
+        inserirImagem(botoes[indiceAleatorio], imgX);
     }
 }
