@@ -9,9 +9,9 @@ import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.border.Border;
-
 import java.util.Random;
-import java.util.Random.*;
+import javax.swing.JOptionPane;
+import javax.swing.Timer;
 
 /////////////////////////////////////////////////////////////
 ///                                                       ///
@@ -32,7 +32,6 @@ public class TelaJogo extends JFrame {
 
     private char[] estado = {' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '}; // Array para marcar estado
 
-
     JLabel label = new JLabel(); // Cria o label
     private JButton[] botoes = new JButton[9]; // Cria os botoes
 
@@ -44,6 +43,66 @@ public class TelaJogo extends JFrame {
         Image imgRedim = imagem.getScaledInstance(largura, altura, Image.SCALE_FAST); // Redimensiona a imagem
         botao.setIcon(new ImageIcon(imgRedim));
     };
+
+    // Metodo que verifica a cada turno se alguem venceu
+    public boolean verificarVencedor(){
+        char[][] padraoVitoria = {
+            {0, 1, 2}, {3, 4, 5}, {6, 7, 8}, // Linhas Horizontais
+            {0, 3, 6}, {1, 4, 7}, {2, 5, 8}, // Colunas verticais
+            {0, 4, 8}, {2, 4, 6}             // Diagonais
+        };
+
+        // Percorre o dicionario testando cada linha
+        for(int i = 0; i < padraoVitoria.length; i++){
+            int pos1 = padraoVitoria[i][0];
+            int pos2 = padraoVitoria[i][1];
+            int pos3 = padraoVitoria[i][2];
+
+            // Se a primeira posição não estiver vazia E for igual à segunda E igual à terceira...
+            if (estado[pos1] != ' ' && estado[pos1] == estado[pos2] && estado[pos2] == estado[pos3]) {
+                jogando = false;
+                
+                finalizarPartida("Fim de Jogo", "O vencedor é: " + estado[pos1] + "!", JOptionPane.INFORMATION_MESSAGE);
+
+                return true;
+            }
+        }
+        return false;
+    }
+
+    // Metodo de verificar se existe espaço vazio
+    private boolean temEspacoVazio() {
+        for (int i = 0; i < estado.length; i++) {
+            if(estado[i] == ' ') {
+                return true; // Achou espaço, o jogo pode continuar
+            }
+        }
+        return false; // Não tem espaço, o tabuleiro lotou
+    }
+
+    // Metodo de limpar a memoria e a interface
+    private void reiniciarJogo() {
+        for (int i = 0; i < estado.length; i++){
+            estado[i] = ' ';
+            inserirImagem(botoes[i], imgVazia);
+        }
+        jogando = true;
+    }
+
+    // Metodo para finalizar a partida em si
+    private void finalizarPartida(String titulo, String mensagem, int icone) {
+        int resposta = JOptionPane.showConfirmDialog(this, 
+            mensagem + "\n\nDeseja jogar novamente?",
+            titulo,
+            JOptionPane.YES_NO_OPTION,
+            icone);
+
+        if (resposta == JOptionPane.YES_OPTION) {
+            reiniciarJogo();
+        } else {
+            System.exit(0);
+        }
+    }
 
     // TELA DO JOGO
     public TelaJogo(){ // Se passar argumentos, ele precisa desses argumentos quando chamado no main
@@ -87,7 +146,6 @@ public class TelaJogo extends JFrame {
                 }
             });
 
-
         add(botoes[indiceAtual]);
         }
 
@@ -96,17 +154,37 @@ public class TelaJogo extends JFrame {
     }
 
     private void processarJogada(int indice, JButton botao){
-        if(estado[indice] == ' ' && jogando){
-            estado[indice] = 'o'; // Salva o dado na memoria (model)
-            inserirImagem(botao, imgO); // Atualiza a tela (view)
+        
+        if(estado[indice] != ' ' || !jogando){
+            return;
+        }
+        // Turno do humano.
+        estado[indice] = 'o'; // Salva o dado na memoria (model)
+        inserirImagem(botao, imgO); // Atualiza a tela (view)
+        if (verificarVencedor()) {
+            return;
+        };
 
+        // Verifica o empate
+        if(!temEspacoVazio()) {
+            jogando = false;
+            finalizarPartida("Empate", "Deu velha! O jogo empatou.", JOptionPane.WARNING_MESSAGE);
+            return; // Aborta o metodo
+        }
+
+        // Turno da maquina
             if(jogando){
-                jogadaMaquina();
-            //Logica de vitoria vai vir aqui. Se vencer, mudar jogando = false
+                Timer timer = new Timer(800, e -> {
+                    jogadaMaquina();
+                    verificarVencedor();
+                });
+                
+                timer.setRepeats(false);
+                timer.start();
             }
         }
-    }
 
+    // Lógica da jogada da maquina
     private void jogadaMaquina(){
         int indiceAleatorio;
 
