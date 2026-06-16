@@ -13,11 +13,12 @@ import java.util.Random;
 import javax.swing.JOptionPane;
 import javax.swing.Timer;
 
+    /////////////////////////////////////////////////////////////
+   ///                                                       ///
+  ///                CONFIGURAÇÃO DA TELA                   ///
+ ///                                                       ///
 /////////////////////////////////////////////////////////////
-///                                                       ///
-///                  CONFIGURAÇÃO DA TELA                 ///
-///                                                       ///
-/////////////////////////////////////////////////////////////
+
 
 public class TelaJogo extends JFrame {
     // Atributos da classe
@@ -28,9 +29,7 @@ public class TelaJogo extends JFrame {
     Border border        = BorderFactory.createLineBorder(Color.BLACK,3); // Cria a borda - Não está fazendo nada
     char simboloAtual    = ' '; //Variavel que vai pegar o simbolo do jogador atual
     Random jogadaMaquina = new Random();
-    boolean jogando      = true;
-
-    private char[] estado = {' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '}; // Array para marcar estado
+    private TabuleiroLogico cerebro;
 
     JLabel label = new JLabel(); // Cria o label
     private JButton[] botoes = new JButton[9]; // Cria os botoes
@@ -44,49 +43,13 @@ public class TelaJogo extends JFrame {
         botao.setIcon(new ImageIcon(imgRedim));
     };
 
-    // Metodo que verifica a cada turno se alguem venceu
-    public boolean verificarVencedor(){
-        char[][] padraoVitoria = {
-            {0, 1, 2}, {3, 4, 5}, {6, 7, 8}, // Linhas Horizontais
-            {0, 3, 6}, {1, 4, 7}, {2, 5, 8}, // Colunas verticais
-            {0, 4, 8}, {2, 4, 6}             // Diagonais
-        };
-
-        // Percorre o dicionario testando cada linha
-        for(int i = 0; i < padraoVitoria.length; i++){
-            int pos1 = padraoVitoria[i][0];
-            int pos2 = padraoVitoria[i][1];
-            int pos3 = padraoVitoria[i][2];
-
-            // Se a primeira posição não estiver vazia E for igual à segunda E igual à terceira...
-            if (estado[pos1] != ' ' && estado[pos1] == estado[pos2] && estado[pos2] == estado[pos3]) {
-                jogando = false;
-                
-                finalizarPartida("Fim de Jogo", "O vencedor é: " + estado[pos1] + "!", JOptionPane.INFORMATION_MESSAGE);
-
-                return true;
-            }
-        }
-        return false;
-    }
-
-    // Metodo de verificar se existe espaço vazio
-    private boolean temEspacoVazio() {
-        for (int i = 0; i < estado.length; i++) {
-            if(estado[i] == ' ') {
-                return true; // Achou espaço, o jogo pode continuar
-            }
-        }
-        return false; // Não tem espaço, o tabuleiro lotou
-    }
-
     // Metodo de limpar a memoria e a interface
     private void reiniciarJogo() {
-        for (int i = 0; i < estado.length; i++){
-            estado[i] = ' ';
+        for (int i = 0; i < cerebro.tamanhoTabuleiro; i++){
+            cerebro.limparMemoria();
             inserirImagem(botoes[i], imgVazia);
         }
-        jogando = true;
+        cerebro.jogando = true;
     }
 
     // Metodo para finalizar a partida em si
@@ -107,6 +70,7 @@ public class TelaJogo extends JFrame {
     // TELA DO JOGO
     public TelaJogo(){ // Se passar argumentos, ele precisa desses argumentos quando chamado no main
     // Construtor da classe
+        this.cerebro = new TabuleiroLogico();
         this.setTitle("Jogo da Velha"); // Titulo da janela
         this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE); // Sai do programa quando frame é fechado
         this.setSize(800,800); // Determina as dimensões x e y da janela
@@ -131,7 +95,7 @@ public class TelaJogo extends JFrame {
                 @Override
                 public void componentResized(ComponentEvent e){
                     // O redimencionador vai atualizar a imagem para a que foi passada como parametro sempre que ele for chamado (quando a janela muda de tamanho.)
-                    char simboloAtual = estado[indiceAtual];
+                    char simboloAtual = cerebro.obterSimbolo(indiceAtual);
 
                     // Pega cada imagem baseada no turno e redimenciona
                     if(simboloAtual == 'x'){
@@ -154,29 +118,37 @@ public class TelaJogo extends JFrame {
     }
 
     private void processarJogada(int indice, JButton botao){
-        
-        if(estado[indice] != ' ' || !jogando){
+
+        if(cerebro.obterSimbolo(indice) != ' ' || !cerebro.jogando){
             return;
         }
         // Turno do humano.
-        estado[indice] = 'o'; // Salva o dado na memoria (model)
+        cerebro.registrarJogada(indice, 'o');; // Salva o dado na memoria (model)
         inserirImagem(botao, imgO); // Atualiza a tela (view)
-        if (verificarVencedor()) {
+        // Pergunta quem venceu e guarda a resposta
+        char vencedor = this.cerebro.verificarVencedor();
+        if (vencedor != ' ') {
+            finalizarPartida("Fim de Jogo", "O vencedor é: " + vencedor + "!", JOptionPane.INFORMATION_MESSAGE);
             return;
         };
 
         // Verifica o empate
-        if(!temEspacoVazio()) {
-            jogando = false;
+        if(!this.cerebro.temEspacoVazio()) {
+            cerebro.jogando = false;
             finalizarPartida("Empate", "Deu velha! O jogo empatou.", JOptionPane.WARNING_MESSAGE);
             return; // Aborta o metodo
         }
 
         // Turno da maquina
-            if(jogando){
+            if(cerebro.jogando){
                 Timer timer = new Timer(800, e -> {
                     jogadaMaquina();
-                    verificarVencedor();
+                    
+                    char vencedorMaquina = this.cerebro.verificarVencedor();
+
+                    if(vencedorMaquina != ' '){
+                        finalizarPartida("Fim de Jogo", "O vencedor é: " + vencedorMaquina + "!", JOptionPane.INFORMATION_MESSAGE);
+                    };
                 });
                 
                 timer.setRepeats(false);
@@ -189,10 +161,10 @@ public class TelaJogo extends JFrame {
         int indiceAleatorio;
 
         do {
-            indiceAleatorio = jogadaMaquina.nextInt(estado.length);
-        } while (estado[indiceAleatorio] != ' ');
+            indiceAleatorio = jogadaMaquina.nextInt(cerebro.tamanhoTabuleiro);
+        } while (cerebro.obterSimbolo(indiceAleatorio) != ' ');
 
-        estado[indiceAleatorio] = 'x';
+        cerebro.registrarJogada(indiceAleatorio, 'x');;
         inserirImagem(botoes[indiceAleatorio], imgX);
     }
 }
